@@ -170,11 +170,30 @@ Item {
     return true
   }
 
+  // omarchy-launch-or-focus ends in `eval exec setsid $LAUNCH_COMMAND`, so
+  // whatever goes into that argument is evaluated by a shell. launchCommand is
+  // ordinary user config rather than remote input, and anyone able to edit
+  // shell.json already runs code as this user, so this is not a privilege
+  // boundary — but passing shell metacharacters into an eval is worth refusing
+  // regardless. Spaces stay legal: "flatpak run tv.plex.Plexamp" is valid.
+  readonly property var unsafeCommandChars: /[;&|`$(){}<>\\"'\n\r]/
+
+  function safeLaunchCommand() {
+    var command = launchCommand && launchCommand.length > 0
+      ? String(launchCommand) : "plexamp.desktop"
+    if (unsafeCommandChars.test(command)) {
+      console.warn("nodrej.plexamp: refusing launchCommand with shell metacharacters; "
+                   + "falling back to plexamp.desktop")
+      return "plexamp.desktop"
+    }
+    return command
+  }
+
   function launch() {
-    var command = launchCommand && launchCommand.length > 0 ? launchCommand : "plexamp.desktop"
     // omarchy-launch-or-focus raises an existing window when there is one, so
     // this stays correct even if MPRIS has not come up yet.
-    Quickshell.execDetached(["omarchy-launch-or-focus", "plexamp", "uwsm-app -- " + command])
+    Quickshell.execDetached(["omarchy-launch-or-focus", "plexamp",
+                             "uwsm-app -- " + safeLaunchCommand()])
     return true
   }
 

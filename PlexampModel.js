@@ -89,6 +89,19 @@ function volumeIcon(volume) {
 
 var DEFAULT_LABEL_FORMAT = "{title}  ·  {artist}"
 
+// Track metadata comes from the tags in a media file, which are attacker- or
+// corruption-controlled input. `labelMode: "full"` deliberately removes the
+// width cap, so without a bound here a pathological title would size the chip
+// to whatever the tag says on every monitor's bar. These limits are far above
+// any real title and exist only to stop that.
+var MAX_LABEL_CHARS = 160
+var MAX_TOOLTIP_CHARS = 300
+
+function ellipsize(text, limit) {
+  var s = String(text)
+  return s.length > limit ? s.slice(0, limit - 1) + "…" : s
+}
+
 // Drops a separator left stranded by an empty field, so a track with no artist
 // reads "Title" rather than "Title  ·  ". Only separators with whitespace on
 // the outer side are touched, so a hyphen inside a name ("AC-DC") survives.
@@ -118,7 +131,7 @@ function labelFor(player, format) {
   out = tidySeparators(out)
   // An empty result means the template referenced only fields this track
   // lacks; fall back rather than showing a blank chip.
-  return out.length > 0 ? out : (title || artist)
+  return ellipsize(out.length > 0 ? out : (title || artist), MAX_LABEL_CHARS)
 }
 
 function tooltipFor(player) {
@@ -128,5 +141,5 @@ function tooltipFor(player) {
   var artist = artistOf(player)
   if (artist) parts.push(artist)
   if (player.trackAlbum) parts.push(String(player.trackAlbum))
-  return parts.join(" — ")
+  return ellipsize(parts.join(" — "), MAX_TOOLTIP_CHARS)
 }
