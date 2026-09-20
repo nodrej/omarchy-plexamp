@@ -59,8 +59,8 @@ Settings live inline on the widget's entry in `~/.config/omarchy/shell.json`:
   "id": "nodrej.plexamp",
   "showArt": true,
   "showLabel": true,
+  "labelMode": "scroll",
   "labelWidth": 180,
-  "scrollLabel": true,
   "visibility": "when-running",
   "leftClick": "panel",
   "wheelAction": "track",
@@ -73,8 +73,14 @@ Settings live inline on the widget's entry in `~/.config/omarchy/shell.json`:
 |---|---|---|---|
 | `showArt` | bool | `true` | Cover art thumbnail in the bar |
 | `showLabel` | bool | `true` | Track label next to the play glyph |
-| `labelWidth` | 60–600 | `180` | Max label width in px before it scrolls |
-| `scrollLabel` | bool | `true` | Marquee long labels (pauses while the panel is open) |
+| `showProgress` | bool | `true` | Hairline playback progress under the chip |
+| `labelMode` | `full`, `scroll`, `truncate` | `scroll` | How a track label wider than `labelWidth` is handled. `full` ignores the limit and lets the chip grow — good on an ultrawide, where nothing needs to move |
+| `labelWidth` | 60–600 | `180` | Max label width in px. Ignored when `labelMode` is `full` |
+| `labelFormat` | template | `{title}  ·  {artist}` | Placeholders `{title}`, `{artist}`, `{album}`. A separator stranded by an empty field is dropped, so a track with no artist reads cleanly |
+| `scrollLabel` | bool | `true` | Legacy. Only consulted when `labelMode` is unset: `true` → `scroll`, `false` → `truncate` |
+| `monitorMode` | `all`, `focused`, `named` | `all` | A bar exists per monitor, so the chip appears on all of them by default |
+| `monitors` | array | `[]` | Monitor names for `monitorMode: named`, e.g. `["DP-1","DP-3"]`. An empty list shows everywhere |
+| `middleClick` | `next`, `previous`, `playPause`, `panel`, `none` | `next` | Middle click behaviour |
 | `visibility` | `when-running`, `when-playing`, `always` | `when-running` | When the chip shows. `always` turns it into a launcher while Plexamp is closed |
 | `leftClick` | `panel`, `playPause` | `panel` | What left click does; right click takes the other one |
 | `wheelAction` | `track`, `volume`, `none` | `track` | Scroll wheel behaviour |
@@ -83,16 +89,15 @@ Settings live inline on the widget's entry in `~/.config/omarchy/shell.json`:
 
 ## Keybindings
 
-The plugin registers two IPC targets. Bind them in `~/.config/hypr/bindings.lua`:
+Everything is reachable through one IPC target. Bind it in
+`~/.config/hypr/bindings.lua`:
 
 ```lua
-o.bind("SUPER", "M", "exec", "omarchy-shell plexamp-panel toggle")
+o.bind("SUPER", "M", "exec", "omarchy-shell plexamp togglePanel")
 o.bind("SUPER SHIFT", "space", "exec", "omarchy-shell plexamp playPause")
 o.bind("SUPER SHIFT", "right", "exec", "omarchy-shell plexamp next")
 o.bind("SUPER SHIFT", "left", "exec", "omarchy-shell plexamp previous")
 ```
-
-`plexamp` (playback, from the service):
 
 | Method | Effect |
 |---|---|
@@ -103,13 +108,13 @@ o.bind("SUPER SHIFT", "left", "exec", "omarchy-shell plexamp previous")
 | `shuffle` | Toggle shuffle |
 | `repeat` | Cycle off → queue → track |
 | `volumeUp`, `volumeDown` | ±5% |
+| `togglePanel`, `showPanel`, `hidePanel` | The player popup |
 | `raise` | Focus the Plexamp window, launching it if needed |
 | `launch` | Start Plexamp |
 | `ping` | Health check |
 
-`plexamp-panel` (the popup): `toggle`, `open`, `close`. The panel opens on the
-focused monitor and closes on the others, so a keybinding does the right thing
-on a multi-monitor setup.
+The panel opens on the focused monitor and closes on the others, so a
+keybinding does the right thing on a multi-monitor setup.
 
 `status` makes the plugin scriptable from anywhere:
 
@@ -121,8 +126,8 @@ omarchy-shell plexamp status | jq -r '"\(.title) — \(.artist)"'
 
 | File | Role |
 |---|---|
-| `Service.qml` | MPRIS binding, position tracking, playback actions, `plexamp` IPC |
-| `BarWidget.qml` | The bar chip, mouse handling, `plexamp-panel` IPC |
+| `Service.qml` | MPRIS binding, position tracking, playback actions, all IPC |
+| `BarWidget.qml` | The bar chip, mouse handling, per-monitor panel state |
 | `PlexampPanel.qml` | Popup contents |
 | `PlexampModel.js` | Pure helpers: player matching, time formatting, glyph choice |
 

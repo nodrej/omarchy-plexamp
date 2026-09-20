@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nodrej.plexamp",
   "name": "Plexamp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "nodrej",
   "license": "MIT",
   "description": "Plexamp in the Omarchy bar: album art, scrolling track, and a player panel with scrubbing, shuffle, repeat, and volume.",
@@ -24,8 +24,14 @@
     "defaults": {
       "showArt": true,
       "showLabel": true,
+      "showProgress": true,
       "labelWidth": 180,
+      "labelMode": "scroll",
+      "labelFormat": "{title}  ·  {artist}",
       "scrollLabel": true,
+      "monitorMode": "all",
+      "monitors": [],
+      "middleClick": "next",
       "visibility": "when-running",
       "leftClick": "panel",
       "wheelAction": "track",
@@ -48,9 +54,68 @@
         "defaultValue": true
       },
       {
+        "key": "showProgress",
+        "type": "boolean",
+        "label": "Show playback progress",
+        "description": "Draw a hairline progress bar under the chip.",
+        "defaultValue": true
+      },
+      {
+        "key": "labelFormat",
+        "type": "string",
+        "label": "Label format",
+        "description": "Template for the bar label. Placeholders: {title}, {artist}, {album}. A separator left stranded by an empty field is dropped.",
+        "defaultValue": "{title}  ·  {artist}"
+      },
+      {
+        "key": "monitorMode",
+        "type": "enum",
+        "label": "Show on monitors",
+        "description": "A bar exists per monitor, so by default the chip appears on all of them.",
+        "options": [
+          { "value": "all", "label": "All monitors" },
+          { "value": "focused", "label": "Focused monitor only" },
+          { "value": "named", "label": "Only the monitors listed below" }
+        ],
+        "defaultValue": "all"
+      },
+      {
+        "key": "monitors",
+        "type": "string",
+        "label": "Monitor names",
+        "description": "Used when \"Show on monitors\" is set to the listed monitors, e.g. [\"DP-1\",\"DP-3\"]. Set with: omarchy bar set nodrej.plexamp monitors '[\"DP-1\"]' --json",
+        "defaultValue": ""
+      },
+      {
+        "key": "middleClick",
+        "type": "enum",
+        "label": "Middle click",
+        "options": [
+          { "value": "next", "label": "Next track" },
+          { "value": "previous", "label": "Previous track" },
+          { "value": "playPause", "label": "Play / pause" },
+          { "value": "panel", "label": "Open player panel" },
+          { "value": "none", "label": "Nothing" }
+        ],
+        "defaultValue": "next"
+      },
+      {
+        "key": "labelMode",
+        "type": "enum",
+        "label": "Long track names",
+        "description": "How to handle a track label wider than the label width. \"Show in full\" ignores the width limit and lets the chip grow.",
+        "options": [
+          { "value": "full", "label": "Show in full (no limit)" },
+          { "value": "scroll", "label": "Scroll within label width" },
+          { "value": "truncate", "label": "Truncate with an ellipsis" }
+        ],
+        "defaultValue": "scroll"
+      },
+      {
         "key": "labelWidth",
         "type": "integer",
         "label": "Label width (px)",
+        "description": "Maximum label width. Ignored when long track names are shown in full.",
         "min": 60,
         "max": 600,
         "step": 10,
@@ -59,8 +124,8 @@
       {
         "key": "scrollLabel",
         "type": "boolean",
-        "label": "Scroll long labels",
-        "description": "Marquee the track label when it does not fit.",
+        "label": "Scroll long labels (legacy)",
+        "description": "Superseded by \"Long track names\"; only consulted when that is unset.",
         "defaultValue": true
       },
       {

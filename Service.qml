@@ -23,6 +23,11 @@ Item {
   property string launchCommand: "plexamp.desktop"
   property int seekStep: 10
 
+  // Panel requests arrive here rather than in the widget: the service is the
+  // single instance, so one IPC handler serves every monitor's widget instead
+  // of four fighting over the same target. Mode is "toggle", "open", "close".
+  signal panelRequested(string mode)
+
   readonly property var players: Mpris.players ? Mpris.players.values : []
   readonly property var player: PlexampModel.pickPlayer(players)
 
@@ -194,7 +199,9 @@ Item {
     interval: 250
     repeat: true
     running: root.playing
-    onTriggered: root.updatePosition()
+    // Guarded: a plugin reload tears the service down while the timer is still
+    // armed, and the last tick then fires against a null root.
+    onTriggered: if (root) root.updatePosition()
   }
 
   // Corrects drift and catches seeks made inside Plexamp itself.
@@ -202,7 +209,7 @@ Item {
     interval: 3000
     repeat: true
     running: root.running
-    onTriggered: root.resyncPosition()
+    onTriggered: if (root) root.resyncPosition()
   }
 
   function statusJson() {
@@ -242,6 +249,9 @@ Item {
     function repeat(): string { return root.cycleLoop() ? "ok" : "unhandled" }
     function volumeUp(): string { return root.nudgeVolume(0.05) ? "ok" : "unhandled" }
     function volumeDown(): string { return root.nudgeVolume(-0.05) ? "ok" : "unhandled" }
+    function togglePanel(): string { root.panelRequested("toggle"); return "ok" }
+    function showPanel(): string { root.panelRequested("open"); return "ok" }
+    function hidePanel(): string { root.panelRequested("close"); return "ok" }
     function raise(): string { return root.raiseOrLaunch() ? "ok" : "unhandled" }
     function launch(): string { return root.launch() ? "ok" : "unhandled" }
     function ping(): string { return "ok" }

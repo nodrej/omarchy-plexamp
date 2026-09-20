@@ -87,12 +87,38 @@ function volumeIcon(volume) {
   return "󰕾"
 }
 
-function labelFor(player) {
+var DEFAULT_LABEL_FORMAT = "{title}  ·  {artist}"
+
+// Drops a separator left stranded by an empty field, so a track with no artist
+// reads "Title" rather than "Title  ·  ". Only separators with whitespace on
+// the outer side are touched, so a hyphen inside a name ("AC-DC") survives.
+function tidySeparators(text) {
+  return String(text)
+    .replace(/\s*[·—–|-]\s*[·—–|-]\s*/g, "  ·  ")
+    .replace(/^\s*[·—–|-]\s+/, "")
+    .replace(/\s+[·—–|-]\s*$/, "")
+    .replace(/\s{3,}/g, "  ")
+    .trim()
+}
+
+function labelFor(player, format) {
   if (!hasTrack(player)) return ""
   var title = String(player.trackTitle || "")
   var artist = artistOf(player)
-  if (title && artist) return title + "  ·  " + artist
-  return title || artist
+  var album = player && player.trackAlbum ? String(player.trackAlbum) : ""
+
+  var template = format && String(format).length > 0
+    ? String(format) : DEFAULT_LABEL_FORMAT
+
+  var out = template
+    .replace(/\{title\}/g, title)
+    .replace(/\{artist\}/g, artist)
+    .replace(/\{album\}/g, album)
+
+  out = tidySeparators(out)
+  // An empty result means the template referenced only fields this track
+  // lacks; fall back rather than showing a blank chip.
+  return out.length > 0 ? out : (title || artist)
 }
 
 function tooltipFor(player) {
