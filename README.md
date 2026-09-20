@@ -29,6 +29,17 @@ Plexamp itself comes from the AUR:
 omarchy pkg aur add plexamp-appimage
 ```
 
+## Remove
+
+```bash
+omarchy plugin remove nodrej.plexamp
+```
+
+That deletes `~/.config/omarchy/plugins/nodrej.plexamp/` and the widget's bar
+entry. The plugin keeps no state anywhere else: its settings live inline on
+that entry in `~/.config/omarchy/shell.json`, which the same command clears.
+To keep it installed but off the bar, `omarchy plugin disable nodrej.plexamp`.
+
 ## What you get
 
 **In the bar** — cover art, a play/pause glyph, and a marquee of
@@ -158,8 +169,10 @@ omarchy plugin validate ~/.config/omarchy/plugins/nodrej.plexamp
 ```
 
 Plugins run unsandboxed inside `omarchy-shell`. This one talks to MPRIS over
-D-Bus and runs `omarchy-launch-or-focus` when you ask it to start Plexamp; it
-makes no network calls and reads no Plex credentials.
+D-Bus, runs `omarchy-launch-or-focus` when you ask it to start Plexamp, and
+runs `omarchy bar set` when you change something in the settings view — that
+is the only way it writes config, and it only ever touches its own entry in
+`shell.json`. It makes no network calls and reads no Plex credentials.
 
 ## Compatibility
 
