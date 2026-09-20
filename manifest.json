@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "id": "nodrej.plexamp",
+  "name": "Plexamp",
+  "version": "0.1.0",
+  "author": "nodrej",
+  "license": "MIT",
+  "description": "Plexamp in the Omarchy bar: album art, scrolling track, and a player panel with scrubbing, shuffle, repeat, and volume.",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Plexamp",
+    "description": "Now playing from Plexamp with cover art, a scrubbable player panel, shuffle, repeat, and volume.",
+    "category": "Media",
+    "aliases": ["plexamp", "plex-music"],
+    "allowMultiple": false,
+    "defaultSection": "center",
+    "defaults": {
+      "showArt": true,
+      "showLabel": true,
+      "labelWidth": 180,
+      "scrollLabel": true,
+      "visibility": "when-running",
+      "leftClick": "panel",
+      "wheelAction": "track",
+      "seekStep": 10,
+      "launchCommand": "plexamp.desktop"
+    },
+    "schema": [
+      {
+        "key": "showArt",
+        "type": "boolean",
+        "label": "Show cover art",
+        "description": "Draw the album cover next to the track in the bar.",
+        "defaultValue": true
+      },
+      {
+        "key": "showLabel",
+        "type": "boolean",
+        "label": "Show track label",
+        "description": "Show title and artist next to the play indicator.",
+        "defaultValue": true
+      },
+      {
+        "key": "labelWidth",
+        "type": "integer",
+        "label": "Label width (px)",
+        "min": 60,
+        "max": 600,
+        "step": 10,
+        "defaultValue": 180
+      },
+      {
+        "key": "scrollLabel",
+        "type": "boolean",
+        "label": "Scroll long labels",
+        "description": "Marquee the track label when it does not fit.",
+        "defaultValue": true
+      },
+      {
+        "key": "visibility",
+        "type": "enum",
+        "label": "Show in bar",
+        "options": [
+          { "value": "when-running", "label": "While Plexamp is running" },
+          { "value": "when-playing", "label": "Only while playing" },
+          { "value": "always", "label": "Always (launcher when closed)" }
+        ],
+        "defaultValue": "when-running"
+      },
+      {
+        "key": "leftClick",
+        "type": "enum",
+        "label": "Left click",
+        "options": [
+          { "value": "panel", "label": "Open player panel" },
+          { "value": "playPause", "label": "Play / pause" }
+        ],
+        "defaultValue": "panel"
+      },
+      {
+        "key": "wheelAction",
+        "type": "enum",
+        "label": "Scroll wheel",
+        "options": [
+          { "value": "track", "label": "Previous / next track" },
+          { "value": "volume", "label": "Volume" },
+          { "value": "none", "label": "Nothing" }
+        ],
+        "defaultValue": "track"
+      },
+      {
+        "key": "seekStep",
+        "type": "integer",
+        "label": "Seek step (seconds)",
+        "min": 5,
+        "max": 120,
+        "step": 5,
+        "defaultValue": 10
+      },
+      {
+        "key": "launchCommand",
+        "type": "string",
+        "label": "Launch command",
+        "description": "Command or .desktop id used to start Plexamp when it is not running.",
+        "defaultValue": "plexamp.desktop"
+      }
+    ]
+  }
+}

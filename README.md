@@ -1,0 +1,167 @@
+# Plexamp for Omarchy
+
+A Plexamp widget for the [Omarchy](https://omarchy.org) shell bar: cover art and
+the current track in the bar, and a player panel with a scrubbable seek bar,
+transport, shuffle, repeat, and volume.
+
+Built on MPRIS, so there is nothing to configure — no Plex token, no server URL.
+Start Plexamp and the widget appears.
+
+![Plexamp in the Omarchy bar](preview.png)
+
+## Install
+
+```bash
+omarchy plugin add https://github.com/nodrej/omarchy-plexamp.git --enable --yes
+```
+
+Plugins land disabled by default so you can read the code first; drop `--enable`
+if you would rather review before running it. The widget starts in the center
+section and can be moved:
+
+```bash
+omarchy bar move nodrej.plexamp --section right
+```
+
+Plexamp itself comes from the AUR:
+
+```bash
+omarchy pkg aur add plexamp-appimage
+```
+
+## What you get
+
+**In the bar** — cover art, a play/pause glyph, and a marquee of
+`title · artist`. On a vertical bar it collapses to art plus play state.
+
+| Interaction | Action |
+|---|---|
+| Left click | Open the player panel (configurable) |
+| Right click | Play / pause |
+| Middle click | Next track |
+| Scroll | Previous / next track, or volume |
+| Hover | Tooltip with title, artist, album |
+
+**In the panel** — large cover, title/artist/album, a seek bar you can drag
+(it commits on release, so scrubbing never stutters Plexamp), elapsed and total
+time, shuffle, previous, play/pause, next, repeat, a volume slider, and an
+_Open Plexamp_ button. When Plexamp is not running the panel becomes a launcher.
+
+Controls follow what Plexamp actually reports over MPRIS: buttons dim when the
+player says it cannot do the thing, so repeat and shuffle never lie about state.
+
+## Settings
+
+Settings live inline on the widget's entry in `~/.config/omarchy/shell.json`:
+
+```json
+{
+  "id": "nodrej.plexamp",
+  "showArt": true,
+  "showLabel": true,
+  "labelWidth": 180,
+  "scrollLabel": true,
+  "visibility": "when-running",
+  "leftClick": "panel",
+  "wheelAction": "track",
+  "seekStep": 10,
+  "launchCommand": "plexamp.desktop"
+}
+```
+
+| Key | Values | Default | What it does |
+|---|---|---|---|
+| `showArt` | bool | `true` | Cover art thumbnail in the bar |
+| `showLabel` | bool | `true` | Track label next to the play glyph |
+| `labelWidth` | 60–600 | `180` | Max label width in px before it scrolls |
+| `scrollLabel` | bool | `true` | Marquee long labels (pauses while the panel is open) |
+| `visibility` | `when-running`, `when-playing`, `always` | `when-running` | When the chip shows. `always` turns it into a launcher while Plexamp is closed |
+| `leftClick` | `panel`, `playPause` | `panel` | What left click does; right click takes the other one |
+| `wheelAction` | `track`, `volume`, `none` | `track` | Scroll wheel behaviour |
+| `seekStep` | 5–120 | `10` | Seconds per `seekForward` / `seekBack` |
+| `launchCommand` | string | `plexamp.desktop` | Command or `.desktop` id used to start Plexamp |
+
+## Keybindings
+
+The plugin registers two IPC targets. Bind them in `~/.config/hypr/bindings.lua`:
+
+```lua
+o.bind("SUPER", "M", "exec", "omarchy-shell plexamp-panel toggle")
+o.bind("SUPER SHIFT", "space", "exec", "omarchy-shell plexamp playPause")
+o.bind("SUPER SHIFT", "right", "exec", "omarchy-shell plexamp next")
+o.bind("SUPER SHIFT", "left", "exec", "omarchy-shell plexamp previous")
+```
+
+`plexamp` (playback, from the service):
+
+| Method | Effect |
+|---|---|
+| `status` | JSON: track, position, length, shuffle, repeat, volume, capabilities |
+| `playPause`, `play`, `pause` | Transport |
+| `next`, `previous` | Track change |
+| `seekForward`, `seekBack` | Seek by `seekStep` seconds |
+| `shuffle` | Toggle shuffle |
+| `repeat` | Cycle off → queue → track |
+| `volumeUp`, `volumeDown` | ±5% |
+| `raise` | Focus the Plexamp window, launching it if needed |
+| `launch` | Start Plexamp |
+| `ping` | Health check |
+
+`plexamp-panel` (the popup): `toggle`, `open`, `close`. The panel opens on the
+focused monitor and closes on the others, so a keybinding does the right thing
+on a multi-monitor setup.
+
+`status` makes the plugin scriptable from anywhere:
+
+```bash
+omarchy-shell plexamp status | jq -r '"\(.title) — \(.artist)"'
+```
+
+## How it works
+
+| File | Role |
+|---|---|
+| `Service.qml` | MPRIS binding, position tracking, playback actions, `plexamp` IPC |
+| `BarWidget.qml` | The bar chip, mouse handling, `plexamp-panel` IPC |
+| `PlexampPanel.qml` | Popup contents |
+| `PlexampModel.js` | Pure helpers: player matching, time formatting, glyph choice |
+
+The service is mounted once per session while the bar widget exists per monitor,
+so every screen shows identical state and the IPC surface has a single owner.
+
+MPRIS reports position only on request, so the service samples it, interpolates
+between samples while playing, and re-syncs every three seconds — the seek bar
+advances smoothly and still catches seeks made inside Plexamp. Timers stop
+entirely when playback is paused or Plexamp is closed.
+
+## Hacking on it
+
+```bash
+git clone https://github.com/nodrej/omarchy-plexamp.git ~/.config/omarchy/plugins/nodrej.plexamp
+omarchy-shell shell rescanPlugins
+omarchy plugin enable nodrej.plexamp
+```
+
+Saving any file under `~/.config/omarchy/plugins/` hot-reloads the plugin code.
+One exception: adding or renaming an `IpcHandler` target needs a full
+`omarchy restart shell` before the new target answers.
+
+Validate the manifest before pushing:
+
+```bash
+omarchy plugin validate ~/.config/omarchy/plugins/nodrej.plexamp
+```
+
+Plugins run unsandboxed inside `omarchy-shell`. This one talks to MPRIS over
+D-Bus and runs `omarchy-launch-or-focus` when you ask it to start Plexamp; it
+makes no network calls and reads no Plex credentials.
+
+## Compatibility
+
+Omarchy 4.x (shell plugin schema v1), Quickshell 0.3+, Plexamp 4.x desktop
+(AppImage, Flatpak, and system builds all export the same MPRIS interface).
+Headless Plexamp has no MPRIS surface and is not supported.
+
+## License
+
+MIT
