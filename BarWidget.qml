@@ -149,8 +149,6 @@ BarWidget {
       color: root.playing
         ? (root.bar ? root.bar.barForeground : Color.foreground)
         : Qt.darker(root.bar ? root.bar.barForeground : Color.foreground, 1.6)
-
-      Behavior on width { NumberAnimation { duration: 240; easing.type: Easing.OutQuad } }
     }
   }
 
