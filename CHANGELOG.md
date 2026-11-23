@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Reduce CPU use during playback by updating the position once a second and
+  advancing the bar's progress hairline without animation.
+
 ## 0.2.0 — 2026-09-20
 
 - Add a hairline playback progress bar under the chip (`showProgress`), driven

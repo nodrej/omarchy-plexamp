@@ -215,7 +215,7 @@ Item {
   // Interpolates between samples while playing; stops entirely when paused or
   // when no Plexamp player is on the bus, so an idle bar costs nothing.
   Timer {
-    interval: 250
+    interval: 1000
     repeat: true
     running: root.playing
     // Guarded: a plugin reload tears the service down while the timer is still
